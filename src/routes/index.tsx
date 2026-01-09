@@ -10,11 +10,11 @@ function HomePage(): React.JSX.Element {
 	const newBooks =
 		books?.filter((b) => b.status === BookStatus.NEW).length || 0;
 	const totalLoans =
-		books?.reduce((accumulator, book) => accumulator + (book.history?.length || 0), 0) || 0;
+		books?.reduce((accumulator, book) => accumulator + (book.loanHistory?.length || 0), 0) || 0;
 	const activeLoans =
 		books?.reduce(
 			(accumulator, book) =>
-				accumulator + (book.history?.filter((l) => !l.isReturned).length || 0),
+				accumulator + (book.loanHistory?.filter((l) => !l.isReturned).length || 0),
 			0
 		) || 0;
 
@@ -79,7 +79,7 @@ function HomePage(): React.JSX.Element {
 						</Link>
 						<Link
 							className="rounded-xl border-2 border-white/30 bg-white/10 px-8 py-4 font-semibold backdrop-blur-sm transition-all hover:bg-white/20"
-							to="/books/new"
+							to="/books/create"
 						>
 							➕ Додати книгу
 						</Link>

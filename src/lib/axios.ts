@@ -1,5 +1,6 @@
 import axios from "axios";
 import { useAuthStore } from "../store/authStore";
+import toast from "react-hot-toast";
 
 const apiClient = axios.create({
 	baseURL: import.meta.env.VITE_API_BASE_URL,
@@ -12,6 +13,7 @@ const apiClient = axios.create({
 apiClient.interceptors.request.use(
 	(config) => {
 		const token = useAuthStore.getState().token;
+
 		if (token) {
 			config.headers.Authorization = `Bearer ${token}`;
 		}
@@ -33,6 +35,15 @@ apiClient.interceptors.response.use(
 		// Якщо прийшла помилка 401 (Unauthorized) - виходимо з системи
 		if (error.response?.status === 401) {
 			useAuthStore.getState().logout();
+			toast.error("Authentication expired. Please log in again.");
+		} else if (error.response?.status === 400) {
+			toast.error("Bad request. Please check your input.");
+		} else if (error.response?.status === 403) {
+			toast.error("You don't have permission to perform this action.");
+		} else if (error.response?.status === 404) {
+			toast.error("The requested resource was not found.");
+		} else if (error.response?.status >= 500) {
+			toast.error("An unexpected error occurred on the server.");
 		}
 		return Promise.reject(error);
 	}

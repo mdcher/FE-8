@@ -5,6 +5,7 @@ import {
 	Outlet,
 	useNavigate,
 } from "@tanstack/react-router";
+import { Toaster } from "react-hot-toast";
 import { useAuthStore } from "@/store/authStore";
 
 function RootComponent(): React.JSX.Element {
@@ -18,6 +19,7 @@ function RootComponent(): React.JSX.Element {
 
 	return (
 		<div className="min-h-screen bg-slate-50 font-sans text-slate-900">
+			<Toaster position="bottom-right" />
 			{/* Шапка сайту (Header) */}
 			<header className="sticky top-0 z-50 w-full border-b border-slate-200 bg-white/80 backdrop-blur-md transition-all">
 				<div className="container mx-auto px-4 md:px-6">
@@ -54,6 +56,16 @@ function RootComponent(): React.JSX.Element {
 							>
 								Книги
 							</Link>
+							<Link
+								to="/loans"
+								activeProps={{
+									className:
+										"bg-indigo-50 text-indigo-700 shadow-sm ring-1 ring-indigo-200",
+								}}
+								className="rounded-lg px-4 py-2 text-sm font-medium text-slate-600 transition-all hover:bg-slate-100 hover:text-slate-900"
+							>
+								Видачі
+							</Link>
 
 							<div className="mx-2 h-6 w-px bg-slate-200" />
 
@@ -67,12 +79,20 @@ function RootComponent(): React.JSX.Element {
 									Вийти
 								</button>
 							) : (
-								<Link
-									to="/login"
-									className="rounded-lg bg-indigo-600 px-5 py-2 text-sm font-medium text-white shadow-md shadow-indigo-500/20 transition-all hover:bg-indigo-700 hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0 active:scale-95"
-								>
-									Увійти
-								</Link>
+								<>
+									<Link
+										to="/register"
+										className="rounded-lg border border-green-200 bg-green-50 px-4 py-2 text-sm font-medium text-green-700 transition-all hover:bg-green-100 hover:border-green-300 active:scale-95"
+									>
+										Реєстрація
+									</Link>
+									<Link
+										to="/login"
+										className="rounded-lg bg-indigo-600 px-5 py-2 text-sm font-medium text-white shadow-md shadow-indigo-500/20 transition-all hover:bg-indigo-700 hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0 active:scale-95"
+									>
+										Увійти
+									</Link>
+								</>
 							)}
 						</nav>
 					</div>

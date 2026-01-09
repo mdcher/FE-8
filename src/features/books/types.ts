@@ -15,6 +15,7 @@ export enum BookStatus {
 	LOST = "Lost",
 }
 
+// Loan type for loanHistory in Book
 export interface Loan {
 	id: number;
 	issueDate: string;
@@ -22,41 +23,28 @@ export interface Loan {
 	isReturned: boolean;
 	returnDate: string | null;
 	userId: number;
-	bookId: number;
 }
 
+// Backend BookResponseDto
 export interface Book {
 	id: number;
 	bookTitle: string;
-
-	author?: string;
-	isbn?: string;
-
-	publisher?: string;
-	year: number;
-	status?: string;
-
-	totalCopies?: number;
-	language?: string;
-	location?: string;
-	description?: string;
-	category?: {
-		id: string;
-		name: string;
-	};
-}
-
-export interface CreateBookDto {
-	bookTitle: string;
-	author: string;
 	publisher: string;
-	year: number;
-	isbn: string;
-	totalCopies: number;
 	language: string;
 	location: string;
+	year: number;
 	status: string;
-	description?: string;
+	loanHistory: Loan[];
+}
+
+// Backend CreateBookDto
+export interface CreateBookDto {
+	title: string;
+	publisher: string;
+	language: LanguageEnum;
+	year: number;
+	location: string;
+	status: BookStatus;
 }
 
 export type UpdateBookDto = Partial<CreateBookDto>;

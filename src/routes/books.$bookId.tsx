@@ -1,46 +1,37 @@
 import { useEffect } from "react";
-import {
-	createFileRoute,
-	useNavigate,
-	useParams,
-} from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { useBook, useUpdateBook } from "../features/books/booksApi.ts";
-import { LanguageEnum, BookStatus } from "../features/books/types";
+import { useBook, useUpdateBook } from "../features/books/booksApi";
+import {
+	LanguageEnum,
+	BookStatus,
+	type UpdateBookDto,
+} from "../features/books/types";
+import { updateBookSchema } from "../features/books/schemas";
 
-const bookSchema = z.object({
-	title: z.string().min(3, "Title must be at least 3 characters"),
-	publisher: z.string().min(2, "Publisher must be at least 2 characters"),
-	language: z.enum([
-		LanguageEnum.UKRAINIAN,
-		LanguageEnum.ENGLISH,
-		LanguageEnum.GERMAN,
-		LanguageEnum.FRENCH,
-		LanguageEnum.SPANISH,
-		LanguageEnum.ROMANIAN,
-		LanguageEnum.SLOVAK,
-	]),
-	year: z
-		.number()
-		.int()
-		.min(1900, "Year must be 1900 or later")
-		.max(new Date().getFullYear() + 1),
-	location: z.string().min(2, "Location must be at least 2 characters"),
-	status: z.enum([
-		BookStatus.NEW,
-		BookStatus.GOOD,
-		BookStatus.DAMAGED,
-		BookStatus.LOST,
-	]),
-});
+type BookFormData = z.infer<typeof updateBookSchema>;
 
-type BookFormData = z.infer<typeof bookSchema>;
+const languageDisplay: Record<LanguageEnum, string> = {
+	[LanguageEnum.UKRAINIAN]: "Українська",
+	[LanguageEnum.ENGLISH]: "Англійська",
+	[LanguageEnum.GERMAN]: "Німецька",
+	[LanguageEnum.FRENCH]: "Французька",
+	[LanguageEnum.SPANISH]: "Іспанська",
+	[LanguageEnum.ROMANIAN]: "Румунська",
+	[LanguageEnum.SLOVAK]: "Словацька",
+};
+
+const statusDisplay: Record<BookStatus, string> = {
+	[BookStatus.NEW]: "Нова",
+	[BookStatus.GOOD]: "В доброму стані",
+	[BookStatus.DAMAGED]: "Пошкоджена",
+	[BookStatus.LOST]: "Втрачена",
+};
 
 function EditBookPage(): React.JSX.Element {
-	const { bookId } = useParams({ from: "/books/$bookId" });
-	const navigate = useNavigate();
+	const { bookId } = Route.useParams();
 	const { data: book, isLoading, isError } = useBook(bookId);
 	const updateBookMutation = useUpdateBook();
 
@@ -49,193 +40,82 @@ function EditBookPage(): React.JSX.Element {
 		handleSubmit,
 		reset,
 		formState: { errors },
-	} = useForm<BookFormData>({
-		resolver: zodResolver(bookSchema),
+	} = useForm({
+		resolver: zodResolver(updateBookSchema),
 	});
 
 	useEffect(() => {
 		if (book) {
 			reset({
-				title: book.bookTitle,
+				bookTitle: book.bookTitle,
 				publisher: book.publisher,
 				year: book.year,
-				status: book.status,
-				language: LanguageEnum.UKRAINIAN,
-				location: "Unknown",
+				status: book.status as BookStatus,
+				language: book.language as LanguageEnum,
+				location: book.location,
 			});
 		}
 	}, [book, reset]);
 
 	const onSubmit = (data: BookFormData): void => {
-		updateBookMutation.mutate({ id: bookId, data });
+		updateBookMutation.mutate({ id: bookId, data: data as UpdateBookDto });
 	};
 
-	if (isLoading) {
-		return (
-			<div className="flex min-h-screen items-center justify-center">
-				<div className="h-12 w-12 animate-spin rounded-full border-b-2 border-blue-500"></div>
-			</div>
-		);
-	}
+	if (isLoading) return <div className="p-4">Завантаження...</div>;
+	if (isError) return <div className="p-4 text-red-500">Помилка завантаження.</div>;
 
-	if (isError || !book) {
-		return (
-			<div className="container mx-auto p-4">
-				<div className="rounded border border-red-400 bg-red-100 px-4 py-3 text-red-700">
-					Book not found or failed to load.
-				</div>
-			</div>
-		);
-	}
+	const inputClass = "w-full rounded-lg border border-slate-300 bg-white px-4 py-2.5";
+	const labelClass = "mb-1.5 block text-sm font-medium";
+	const errorClass = "mt-1 text-xs text-red-500";
 
 	return (
-		<div className="container mx-auto max-w-2xl p-4">
-			<div className="mb-6">
-				<button
-					className="mb-4 text-blue-500 hover:text-blue-600"
-					type="button"
-					onClick={() => {
-						void navigate({ to: "/books" });
-					}}
-				>
-					← Back to Books
-				</button>
-				<h1 className="text-3xl font-bold text-gray-800">
-					Edit Book: {book.bookTitle}
-				</h1>
+		<div className="mx-auto max-w-xl py-8">
+			<div className="mb-6 flex items-center justify-between">
+				<h1 className="text-3xl font-bold">Редагувати: {book?.bookTitle}</h1>
+				<Link to="/books" className="text-sm font-medium text-indigo-600">Скасувати</Link>
 			</div>
-
-			<form
-				className="space-y-6 rounded-lg bg-white p-6 shadow-md"
-				onSubmit={handleSubmit(onSubmit)}
-			>
+			<form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
 				<div>
-					<label
-						className="mb-1 block text-sm font-medium text-gray-700"
-						htmlFor="title"
-					>
-						Book Title *
-					</label>
-					<input
-						{...register("title")}
-						id="title"
-						type="text"
-						className={`w-full rounded-lg border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-							errors.title ? "border-red-500" : "border-gray-300"
-						}`}
-					/>
-					{errors.title && (
-						<p className="mt-1 text-sm text-red-500">{errors.title.message}</p>
-					)}
+					<label className={labelClass} htmlFor="bookTitle">Назва *</label>
+					<input id="bookTitle" {...register("bookTitle")} className={inputClass} />
+					{errors.bookTitle && <p className={errorClass}>{errors.bookTitle.message}</p>}
 				</div>
-
 				<div>
-					<label
-						className="mb-1 block text-sm font-medium text-gray-700"
-						htmlFor="publisher"
-					>
-						Publisher *
-					</label>
-					<input
-						{...register("publisher")}
-						id="publisher"
-						type="text"
-						className={`w-full rounded-lg border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-							errors.publisher ? "border-red-500" : "border-gray-300"
-						}`}
-					/>
-					{errors.publisher && (
-						<p className="mt-1 text-sm text-red-500">
-							{errors.publisher.message}
-						</p>
-					)}
+					<label className={labelClass} htmlFor="publisher">Видавництво *</label>
+					<input id="publisher" {...register("publisher")} className={inputClass} />
+					{errors.publisher && <p className={errorClass}>{errors.publisher.message}</p>}
 				</div>
-
-				<div>
-					<label
-						className="mb-1 block text-sm font-medium text-gray-700"
-						htmlFor="year"
-					>
-						Year *
-					</label>
-					<input
-						{...register("year", { valueAsNumber: true })}
-						id="year"
-						type="number"
-						className={`w-full rounded-lg border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-							errors.year ? "border-red-500" : "border-gray-300"
-						}`}
-					/>
-					{errors.year && (
-						<p className="mt-1 text-sm text-red-500">{errors.year.message}</p>
-					)}
-				</div>
-
-				<div>
-					<label
-						className="mb-1 block text-sm font-medium text-gray-700"
-						htmlFor="status"
-					>
-						Status *
-					</label>
-					<select
-						{...register("status")}
-						id="status"
-						className={`w-full rounded-lg border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-							errors.status ? "border-red-500" : "border-gray-300"
-						}`}
-					>
-						{Object.values(BookStatus).map((status) => (
-							<option key={status} value={status}>
-								{status}
-							</option>
-						))}
-					</select>
-					{errors.status && (
-						<p className="mt-1 text-sm text-red-500">{errors.status.message}</p>
-					)}
-				</div>
-
-				{book.history && book.history.length > 0 && (
-					<div className="border-t pt-4">
-						<h3 className="mb-3 text-lg font-semibold">Loan History</h3>
-						<div className="space-y-2">
-							{book.history.map((loan) => (
-								<div key={loan.id} className="rounded bg-gray-50 p-3">
-									<p className="text-sm">
-										<span className="font-medium">Issue Date:</span>{" "}
-										{loan.issueDate}
-									</p>
-									<p className="text-sm">
-										<span className="font-medium">Due Date:</span>{" "}
-										{loan.dueDate}
-									</p>
-									<p className="text-sm">
-										<span className="font-medium">Returned:</span>{" "}
-										{loan.isReturned ? "✓ Yes" : "✗ No"}
-									</p>
-								</div>
-							))}
-						</div>
+				<div className="grid grid-cols-2 gap-6">
+					<div>
+						<label className={labelClass} htmlFor="year">Рік *</label>
+						<input id="year" type="number" {...register("year")} className={inputClass} />
+						{errors.year && <p className={errorClass}>{errors.year.message}</p>}
 					</div>
-				)}
-
-				<div className="flex gap-4">
-					<button
-						className="flex-1 rounded-lg bg-green-500 px-6 py-3 font-medium text-white transition-colors hover:bg-green-600 disabled:bg-gray-400"
-						disabled={updateBookMutation.isPending}
-						type="submit"
-					>
-						{updateBookMutation.isPending ? "Saving..." : "Save Changes"}
-					</button>
-					<button
-						className="rounded-lg border border-gray-300 px-6 py-3 transition-colors hover:bg-gray-50"
-						type="button"
-						onClick={() => {
-							void navigate({ to: "/books" });
-						}}
-					>
-						Cancel
+					<div>
+						<label className={labelClass} htmlFor="language">Мова *</label>
+						<select id="language" {...register("language")} className={inputClass}>
+							{Object.values(LanguageEnum).map(lang => <option key={lang} value={lang}>{languageDisplay[lang]}</option>)}
+						</select>
+						{errors.language && <p className={errorClass}>{errors.language.message}</p>}
+					</div>
+				</div>
+				<div className="grid grid-cols-2 gap-6">
+					<div>
+						<label className={labelClass} htmlFor="status">Статус *</label>
+						<select id="status" {...register("status")} className={inputClass}>
+							{Object.values(BookStatus).map(status => <option key={status} value={status}>{statusDisplay[status]}</option>)}
+						</select>
+						{errors.status && <p className={errorClass}>{errors.status.message}</p>}
+					</div>
+					<div>
+						<label className={labelClass} htmlFor="location">Локація *</label>
+						<input id="location" {...register("location")} className={inputClass} />
+						{errors.location && <p className={errorClass}>{errors.location.message}</p>}
+					</div>
+				</div>
+				<div className="pt-4">
+					<button type="submit" className="w-full rounded-lg bg-indigo-600 px-4 py-3 text-white" disabled={updateBookMutation.isPending}>
+						{updateBookMutation.isPending ? "Збереження..." : "Зберегти зміни"}
 					</button>
 				</div>
 			</form>
